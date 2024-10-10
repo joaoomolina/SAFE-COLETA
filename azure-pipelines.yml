@@ -5,7 +5,7 @@ trigger:
       - '*'
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'self hosted'
 
 steps:
   # Faz o checkout do código do repositório GitHub

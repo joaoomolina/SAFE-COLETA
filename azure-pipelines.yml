@@ -5,39 +5,26 @@ trigger:
     include:
       - '*'
 
+# Utilize a pool 'Default' onde o seu agente self-hosted está registrado
 pool:
-  name: 'Default'  # Pool onde o seu agente está registrado
-
-# Você pode remover demands se não precisar especificar o agente pelo nome.
-# demands:
-#   - agent.name -equals 'Agenteselfhosted'
+  name: 'Default'
 
 steps:
+  # Faz o checkout do código do repositório
   - checkout: self
 
-  # Instalar JDK 11
+  # Verifica se o Maven e o JDK estão instalados
   - script: |
-      if [ "$(uname)" = "Linux" ]; then
-        sudo apt-get update
-        sudo apt-get install -y openjdk-11-jdk maven  # Instalando Maven no Linux também
-      elif [ "$(uname)" = "Darwin" ]; then
-        brew tap AdoptOpenJDK/openjdk
-        brew install --cask adoptopenjdk11
-        brew install maven  # Instalando Maven no MacOS
-      else
-        echo "Instalação manual do Maven necessária para Windows"
-      fi
-      java -version
-      mvn -version  # Verifica se o Maven foi instalado corretamente
-    displayName: 'Instalar JDK 11 e Maven'
-    condition: succeeded()
+      java -version  # Verifica a versão do JDK instalado
+      mvn -version   # Verifica se o Maven está instalado corretamente
+    displayName: 'Verificar JDK e Maven'
 
   # Build do projeto com Maven
   - task: Maven@3
     inputs:
-      mavenPomFile: 'pom.xml'
+      mavenPomFile: 'pom.xml'  # Certifique-se de que o arquivo pom.xml está no diretório correto
       goals: 'clean install'
-      options: '-B'
+      options: '-B'  # Evita prompts interativos
       publishJUnitResults: true
       testResultsFiles: '**/surefire-reports/TEST-*.xml'
 

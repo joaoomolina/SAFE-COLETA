@@ -1,28 +1,41 @@
 # azure-pipelines.yml
+
 trigger:
   branches:
     include:
-      - '*'
+      - '*'  # Qualquer branch pode disparar o pipeline
 
+# Especifica a pool 'Default' onde o agente self-hosted está registrado
 pool:
-  vmImage: 'self hosted'
+  name: 'Default'  # Pool onde o seu agente está registrado
+  demands:
+    - agent.name -equals 'Agenteselfhosted'  # Nome exato do seu agente self-hosted
 
 steps:
-  # Faz o checkout do código do repositório GitHub
+  # Checkout do código do repositório GitHub ou Azure DevOps
   - checkout: self
 
-  # Instalar JDK 11 diretamente usando script
+  # Instalar o JDK 11, com suporte para diferentes sistemas operacionais
   - script: |
-      sudo apt-get install -y openjdk-11-jdk
-      java -version  # Verificar se o JDK foi instalado corretamente
+      if [ "$(uname)" = "Linux" ]; then
+        sudo apt-get update
+        sudo apt-get install -y openjdk-11-jdk
+      elif [ "$(uname)" = "Darwin" ]; then
+        brew tap AdoptOpenJDK/openjdk
+        brew install --cask adoptopenjdk11
+      else
+        echo "Instalação manual do JDK necessária para Windows"
+      fi
+      java -version  # Verifica se o JDK foi instalado corretamente
     displayName: 'Instalar JDK 11'
+    condition: succeeded()  # Executa somente se o passo anterior tiver sucesso
 
   # Build do projeto com Maven
   - task: Maven@3
     inputs:
-      mavenPomFile: 'pom.xml'
+      mavenPomFile: 'pom.xml'  # Certifique-se de que este caminho está correto
       goals: 'clean install'
-      options: '-B'
+      options: '-B'  # Evita prompts interativos durante a execução
       publishJUnitResults: true
       testResultsFiles: '**/surefire-reports/TEST-*.xml'
 
@@ -33,4 +46,3 @@ steps:
       summaryFileLocation: 'target/site/jacoco/jacoco.xml'
       reportDirectory: 'target/site/jacoco'
       failIfCoverageEmpty: true
-

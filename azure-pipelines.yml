@@ -3,39 +3,41 @@
 trigger:
   branches:
     include:
-      - '*'  # Qualquer branch pode disparar o pipeline
+      - '*'
 
-# Especifica a pool 'Default' onde o agente self-hosted está registrado
 pool:
   name: 'Default'  # Pool onde o seu agente está registrado
-  demands:
-    - agent.name -equals 'Agenteselfhosted'  # Nome exato do seu agente self-hosted
+
+# Você pode remover demands se não precisar especificar o agente pelo nome.
+# demands:
+#   - agent.name -equals 'Agenteselfhosted'
 
 steps:
-  # Checkout do código do repositório GitHub ou Azure DevOps
   - checkout: self
 
-  # Instalar o JDK 11, com suporte para diferentes sistemas operacionais
+  # Instalar JDK 11
   - script: |
       if [ "$(uname)" = "Linux" ]; then
         sudo apt-get update
-        sudo apt-get install -y openjdk-11-jdk
+        sudo apt-get install -y openjdk-11-jdk maven  # Instalando Maven no Linux também
       elif [ "$(uname)" = "Darwin" ]; then
         brew tap AdoptOpenJDK/openjdk
         brew install --cask adoptopenjdk11
+        brew install maven  # Instalando Maven no MacOS
       else
-        echo "Instalação manual do JDK necessária para Windows"
+        echo "Instalação manual do Maven necessária para Windows"
       fi
-      java -version  # Verifica se o JDK foi instalado corretamente
-    displayName: 'Instalar JDK 11'
-    condition: succeeded()  # Executa somente se o passo anterior tiver sucesso
+      java -version
+      mvn -version  # Verifica se o Maven foi instalado corretamente
+    displayName: 'Instalar JDK 11 e Maven'
+    condition: succeeded()
 
   # Build do projeto com Maven
   - task: Maven@3
     inputs:
-      mavenPomFile: 'pom.xml'  # Certifique-se de que este caminho está correto
+      mavenPomFile: 'pom.xml'
       goals: 'clean install'
-      options: '-B'  # Evita prompts interativos durante a execução
+      options: '-B'
       publishJUnitResults: true
       testResultsFiles: '**/surefire-reports/TEST-*.xml'
 
